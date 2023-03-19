@@ -10,11 +10,9 @@ public class Declaration extends ASTNode {
 	public PropertyName property;
 	public Expression expression;
 
-	public Declaration() {
-		super();
-	}
+	public Declaration() {}
+
 	public Declaration(String property) {
-		super();
 		this.property = new PropertyName(property);
 	}
 	@Override

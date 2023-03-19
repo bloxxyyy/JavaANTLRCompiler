@@ -7,7 +7,6 @@ public class VariableReference extends Expression {
 	public String name;
 	
 	public VariableReference(String name) {
-		super();
 		this.name = name;
 	}
 

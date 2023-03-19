@@ -24,3 +24,4 @@ public class LiteralTypeVisitor implements LiteralVisitor<ExpressionType> {
         return ExpressionType.BOOL;
     }
 }
+

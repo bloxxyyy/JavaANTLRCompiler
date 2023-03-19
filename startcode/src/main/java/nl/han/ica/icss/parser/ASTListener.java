@@ -5,6 +5,9 @@ import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.datastructures.StackMap;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.operations.AddOperation;
+import nl.han.ica.icss.ast.operations.MultiplyOperation;
+import nl.han.ica.icss.ast.operations.SubtractOperation;
 import nl.han.ica.icss.ast.selectors.ClassSelector;
 import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
@@ -25,6 +28,25 @@ public class ASTListener extends ICSSBaseListener {
 	public ASTListener() {
 		ast = new AST();
 		currentContainer = new StackMap<>();
+	}
+
+	@Override public void enterExp(ICSSParser.ExpContext ctx) {
+		Operation exp = null;
+		if (ctx.children.size() < 2) return;
+		String name = ctx.getChild(1).getText();
+
+		if (Objects.equals(name, "*")) exp = new MultiplyOperation();
+		if (Objects.equals(name, "-")) exp = new SubtractOperation();
+		if (Objects.equals(name, "+")) exp = new AddOperation();
+
+		currentContainer.peek().addChild(exp);
+		currentContainer.push(exp);
+	}
+
+	@Override
+	public void exitExp(ICSSParser.ExpContext ctx) {
+		if (ctx.children.size() < 2) return;
+		currentContainer.pop();
 	}
 
 	@Override public void enterVari(ICSSParser.VariContext ctx) {
@@ -67,6 +89,8 @@ public class ASTListener extends ICSSBaseListener {
 		currentContainer.peek().addChild(stylerule);
 		currentContainer.push(stylerule);
 	}
+
+
 
 	@Override
 	public void exitSheetrule(ICSSParser.SheetruleContext ctx) {

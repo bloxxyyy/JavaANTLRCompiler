@@ -55,7 +55,7 @@ variablereference: CAPITAL_IDENT;
 
 sheetrule: selec OPEN_BRACE (ifstmt | decl | vari)* CLOSE_BRACE;
 
-calc: (literal | variablereference) ((MUL | PLUS | MIN) (literal | variablereference | calc));
+//calc: (literal | variablereference) ((MUL | PLUS | MIN) (literal | variablereference | calc));
 
 selec: (idSelect | classSelect | tagSelect);
 idSelect: ID_IDENT;
@@ -68,7 +68,7 @@ property: (COL | BACKG | WIDTH | HEIGHT)+;
 literal: COLOR | bool | PERCENTAGE | SCALAR| PIXELSIZE;
 bool: TRUE | FALSE;
 
-exp: exp PLUS exp | exp MUL exp | exp MIN exp | (variablereference | literal);
+exp: exp MUL exp | exp PLUS exp | exp MIN exp | (variablereference | literal);
 
 ifstmt: IF BOX_BRACKET_OPEN (variablereference | bool) BOX_BRACKET_CLOSE OPEN_BRACE (ifstmt | decl | vari)* CLOSE_BRACE (elsestmt)?;
 elsestmt: ELSE OPEN_BRACE (ifstmt | decl | vari)* CLOSE_BRACE;
