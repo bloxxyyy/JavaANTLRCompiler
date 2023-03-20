@@ -5,6 +5,7 @@ import nl.han.ica.datastructures.HanLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.datastructures.StackMap;
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
 import nl.han.ica.icss.ast.literals.ScalarLiteral;
@@ -12,8 +13,10 @@ import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Objects;
 
 public class Evaluator implements Transform {
 
@@ -42,7 +45,130 @@ public class Evaluator implements Transform {
             if (child instanceof Declaration) {
                 ((Declaration) child).expression = getExpressionType(((Declaration) child).expression);
             }
+
+            if (child instanceof IfClause) {
+                checkNodes(child); // zorg dat de kindere in de if clause al gedaan zijn.
+                var transform = transformForIfClause((IfClause) child);
+
+                if (node instanceof IfClause) {
+                    replaceOrAddForIf(((IfClause) node), child, transform);
+                    ((IfClause) node).body.remove(child);
+
+                    checkNodes(node);
+                }
+
+                if (node instanceof ElseClause) {
+                    replaceOrAddForElse(((ElseClause) node), child, transform);
+                    ((ElseClause) node).body.remove(child);
+
+                    checkNodes(node);
+                }
+
+                if (node instanceof Stylerule) {
+                    replaceOrAddForStyleRule(((Stylerule) node), child, transform);
+                    checkNodes(node);
+                }
+            }
         }
+    }
+
+    private void replaceOrAddForStyleRule(Stylerule nodeType, ASTNode c, ArrayList<ASTNode> data) {
+        //var children = c.getChildren();
+        nodeType.body.remove(c);
+        var parentChildren = nodeType.getChildren();
+
+        for (var child : data) {
+            for (var pchild : parentChildren) {
+                if (pchild instanceof VariableReference && child instanceof VariableReference) {
+                    if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+                if (pchild instanceof Declaration && child instanceof Declaration) {
+                    if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+            }
+            nodeType.body.add(child);
+        }
+    }
+    private void replaceOrAddForIf(IfClause nodeType, ASTNode c, ArrayList<ASTNode> data) {
+        //var children = c.getChildren();
+        nodeType.body.remove(c);
+        var parentChildren = nodeType.getChildren();
+
+        for (var child : data) {
+            for (var pchild : parentChildren) {
+                if (pchild instanceof VariableReference && child instanceof VariableReference) {
+                    if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+
+                if (pchild instanceof Declaration && child instanceof Declaration) {
+                    if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+            }
+            nodeType.body.add(child);
+        }
+    }
+    private void replaceOrAddForElse(ElseClause nodeType, ASTNode c, ArrayList<ASTNode> data) {
+        //var children = c.getChildren();
+        nodeType.body.remove(c);
+        var parentChildren = nodeType.getChildren();
+
+        for (var child : data) {
+            for (var pchild : parentChildren) {
+                if (pchild instanceof VariableReference && child instanceof VariableReference) {
+                    if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+                if (pchild instanceof Declaration && child instanceof Declaration) {
+                    if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
+                        nodeType.body.remove(pchild);
+                        nodeType.body.add(child);
+                        return;
+                    }
+                }
+            }
+            nodeType.body.add(child);
+        }
+    }
+
+
+
+
+
+
+
+    private ArrayList<ASTNode> transformForIfClause(IfClause ifClause) {
+        if (conditionIsTrue(ifClause.conditionalExpression)) return ifClause.body;
+        if(ifClause.elseClause != null) return ifClause.elseClause.body;
+        return new ArrayList<>();
+    }
+
+    private boolean conditionIsTrue(Expression conditionalExpression) {
+        if(conditionalExpression instanceof VariableReference) {
+            return ((BoolLiteral) variableValues.get(((VariableReference) conditionalExpression).name)).value;
+        }
+
+        if(conditionalExpression instanceof BoolLiteral) return ((BoolLiteral) conditionalExpression).value;
+
+        return false;
     }
 
     private Literal getExpressionType(Expression expression) {

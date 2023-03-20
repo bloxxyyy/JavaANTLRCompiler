@@ -30,6 +30,23 @@ public class ASTListener extends ICSSBaseListener {
 		currentContainer = new StackMap<>();
 	}
 
+	@Override public void enterIfstmt(ICSSParser.IfstmtContext ctx) {
+		IfClause i = new IfClause();
+		currentContainer.peek().addChild(i);
+		currentContainer.push(i);
+	}
+	@Override public void exitIfstmt(ICSSParser.IfstmtContext ctx) {
+		currentContainer.pop();
+	}
+	@Override public void enterElsestmt(ICSSParser.ElsestmtContext ctx) {
+		ElseClause e = new ElseClause();
+		currentContainer.peek().addChild(e);
+		currentContainer.push(e);
+	}
+	@Override public void exitElsestmt(ICSSParser.ElsestmtContext ctx) {
+		currentContainer.pop();
+	}
+
 	@Override public void enterExp(ICSSParser.ExpContext ctx) {
 		Operation exp = null;
 		if (ctx.children.size() < 2) return;
@@ -90,8 +107,6 @@ public class ASTListener extends ICSSBaseListener {
 		currentContainer.push(stylerule);
 	}
 
-
-
 	@Override
 	public void exitSheetrule(ICSSParser.SheetruleContext ctx) {
 		currentContainer.pop();
@@ -99,20 +114,16 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void exitLiteral(ICSSParser.LiteralContext ctx) {
-		Literal literal = null;
-		if (ctx.getText().contains("px")) {
-			literal = new PixelLiteral(ctx.getText());
-		} else if (ctx.getText().contains("%")) {
-			literal = new PercentageLiteral(ctx.getText());
-		} else if (ctx.getText().contains("#")) {
-			literal = new ColorLiteral(ctx.getText());
-		} else if (Objects.equals(ctx.getText(), "TRUE") || Objects.equals(ctx.getText(), "FALSE")) {
-			literal = new BoolLiteral(ctx.getText());
-		} else {
-			literal = new ScalarLiteral(ctx.getText());
-		}
-
+		var literal = checkLiteral(ctx.getText());
 		currentContainer.peek().addChild(literal);
+	}
+
+	private Literal checkLiteral(String text){
+		if (text.contains("px")) return new PixelLiteral(text);
+		if (text.contains("%")) return new PercentageLiteral(text);
+		if (text.contains("#")) return new ColorLiteral(text);
+		if (Objects.equals(text, "TRUE") || Objects.equals(text, "FALSE")) return new BoolLiteral(text);
+		return new ScalarLiteral(text);
 	}
 
 	@Override

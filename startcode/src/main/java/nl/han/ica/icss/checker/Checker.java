@@ -21,17 +21,39 @@ public class Checker {
         variableTypes.addFirst(new HashMap<>());
 
         for (var astNode: ast.root.getChildren()) {
-
-            if (astNode instanceof VariableAssignment) {
-                checkVariable((VariableAssignment) astNode);
-            }
-            if (astNode instanceof Stylerule) {
-                for (var childNode: astNode.getChildren()) {
-                    checkNode(childNode);
-                }
-            }
+            if (astNode instanceof VariableAssignment) checkVariable((VariableAssignment) astNode);
+            checkBody(astNode);
         }
     }
+
+    int scope = 0;
+
+    public void checkBody(ASTNode node) {
+        if (hasBodyType(node)) {
+            scope = scope + 1;
+            HashMap<String, ExpressionType> scopeMap =  new HashMap<>();
+            variableTypes.insert(scope, scopeMap);
+
+            if (node instanceof IfClause) IfCheck((IfClause) node);
+
+            for (var childNode: node.getChildren()) {
+                checkNode(childNode);
+            }
+
+            variableTypes.delete(scope);
+            scope = scope - 1;
+        }
+    }
+
+    private void IfCheck(IfClause astNode) {
+        var condition = astNode.conditionalExpression;
+        if (getExpressionTypeOfKinds(condition, astNode) != ExpressionType.BOOL) astNode.setError("If must use bool!");
+    }
+
+    private boolean hasBodyType(ASTNode node) {
+        return (node instanceof Stylerule || node instanceof IfClause || node instanceof ElseClause);
+    }
+
 
     private void checkVariable(VariableAssignment astNode) {
         var ref = astNode.name;
@@ -39,24 +61,26 @@ public class Checker {
 
         if(expression instanceof Literal) {
             var type = determineLiteral((Literal) expression);
-            variableTypes.get(0).put(ref.name, type);
+            variableTypes.get(scope).put(ref.name, type);
         } else if(expression instanceof VariableReference) {
             ExpressionType expressionType = checkRefVarExists((VariableReference) expression);
-            variableTypes.get(0).put(ref.name, expressionType);
+            variableTypes.get(scope).put(ref.name, expressionType);
         } else if(expression instanceof Operation) {
                 ExpressionType expressionType = checkOpp((Operation) expression);
-                variableTypes.get(0).put(ref.name, expressionType);
+                variableTypes.get(scope).put(ref.name, expressionType);
         } else {
             astNode.setError("Variable reference has no valid body!");
         }
     }
 
     private ExpressionType checkRefVarExists(VariableReference varRef) {
-        //for(int i = 0; i <= scopeLevel; i++) {
-        HashMap<String, ExpressionType> scopeLevelVariables = variableTypes.get(0);
-        ExpressionType expressionType = scopeLevelVariables.get(varRef.name);
-        return Objects.requireNonNullElse(expressionType, ExpressionType.UNDEFINED);
-       // }
+        for(int i = 0; i <= scope; i++) {
+            HashMap<String, ExpressionType> scopeLevelVariables = variableTypes.get(i);
+            ExpressionType expressionType = scopeLevelVariables.get(varRef.name);
+            var type = Objects.requireNonNullElse(expressionType, ExpressionType.UNDEFINED);
+            if (type != ExpressionType.UNDEFINED) return type;
+        }
+        return ExpressionType.UNDEFINED;
     }
 
     private ExpressionType determineLiteral(Literal literal) {
@@ -64,30 +88,29 @@ public class Checker {
     }
 
     private void checkNode(ASTNode astNode) {
-        if (astNode instanceof Declaration) {
-            checkDecleration((Declaration) astNode);
-        }
+        checkBody(astNode);
+        if (astNode instanceof VariableAssignment) checkVariable((VariableAssignment) astNode);
+        if (astNode instanceof Declaration) checkDecleration((Declaration) astNode);
     }
+
+    private ExpressionType getExpressionTypeOfKinds(Expression type, ASTNode node) {
+        ExpressionType expType = ExpressionType.UNDEFINED;
+        if(type instanceof Literal) expType = determineLiteral((Literal) type);
+        if(type instanceof Operation) expType = checkOpp((Operation) type);
+        if(type instanceof VariableReference) {
+            expType = checkRefVarExists((VariableReference) type);
+            if (expType == ExpressionType.UNDEFINED) {
+                node.setError("expression type not found for variable reference!");
+            }
+        }
+        return expType;
+    }
+
 
     private void checkDecleration(Declaration astNode) {
         var name = astNode.property.name;
         var type = astNode.expression;
-        var expType = ExpressionType.UNDEFINED;
-
-        if(type instanceof Literal) {
-            expType = determineLiteral((Literal) type);
-        }
-
-        if(type instanceof Operation) {
-            expType = checkOpp((Operation) type);
-        }
-
-        if(type instanceof VariableReference) {
-            expType = checkRefVarExists((VariableReference) type);
-            if (expType == ExpressionType.UNDEFINED) {
-                astNode.setError(name + " expression type not found for variable reference!");
-            }
-        }
+        var expType = getExpressionTypeOfKinds(type, astNode);
 
         if ((name.equals("width") || name.equals("height")) && !(expType == ExpressionType.PIXEL || expType == ExpressionType.PERCENTAGE)) {
             astNode.setError(name + " must be of type Pixel or Percentage!");
