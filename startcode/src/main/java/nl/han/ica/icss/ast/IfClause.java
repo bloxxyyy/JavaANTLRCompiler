@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class IfClause extends ASTNode implements IBodyable {
-
-
     public Expression conditionalExpression;
     public ArrayList<ASTNode> body = new ArrayList<>();
     public ElseClause elseClause;

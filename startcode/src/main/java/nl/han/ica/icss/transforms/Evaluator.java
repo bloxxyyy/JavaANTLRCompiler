@@ -21,7 +21,7 @@ import java.util.Objects;
 
 public class Evaluator implements Transform {
 
-    private HashMap<String, Literal> variableValues;
+    private final HashMap<String, Literal> variableValues;
 
     public Evaluator() {
         variableValues = new HashMap<>();
