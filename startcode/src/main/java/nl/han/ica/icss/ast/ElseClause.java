@@ -1,13 +1,20 @@
 package nl.han.ica.icss.ast;
 
+import nl.han.ica.Helpers.IBodyable;
+
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class ElseClause extends ASTNode{
+public class ElseClause extends ASTNode implements IBodyable {
 
     public ArrayList<ASTNode> body = new ArrayList<>();
 
     public ElseClause() { }
+
+    @Override
+    public ArrayList<ASTNode> getBody() {
+        return this.body;
+    }
 
     public ElseClause(ArrayList<ASTNode> body) {
 

@@ -1,14 +1,21 @@
 package nl.han.ica.icss.ast;
 
+import nl.han.ica.Helpers.IBodyable;
+
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class Stylerule extends ASTNode {
+public class Stylerule extends ASTNode implements IBodyable {
 	
 	public ArrayList<Selector> selectors = new ArrayList<>();
 	public ArrayList<ASTNode> body = new ArrayList<>();
 
     public Stylerule() { }
+
+	@Override
+	public ArrayList<ASTNode> getBody() {
+		return this.body;
+	}
 
     public Stylerule(Selector selector, ArrayList<ASTNode> body) {
 

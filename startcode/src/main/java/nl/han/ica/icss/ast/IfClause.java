@@ -1,9 +1,11 @@
 package nl.han.ica.icss.ast;
 
+import nl.han.ica.Helpers.IBodyable;
+
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class IfClause extends ASTNode {
+public class IfClause extends ASTNode implements IBodyable {
 
 
     public Expression conditionalExpression;
@@ -17,6 +19,12 @@ public class IfClause extends ASTNode {
         this.conditionalExpression = conditionalExpression;
         this.body = body;
     }
+
+    @Override
+    public ArrayList<ASTNode> getBody() {
+        return this.body;
+    }
+
     public IfClause(Expression conditionalExpression, ArrayList<ASTNode> body, ElseClause elseClause) {
 
         this.conditionalExpression = conditionalExpression;

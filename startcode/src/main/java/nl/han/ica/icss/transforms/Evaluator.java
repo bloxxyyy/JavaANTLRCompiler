@@ -1,5 +1,6 @@
 package nl.han.ica.icss.transforms;
 
+import nl.han.ica.Helpers.IBodyable;
 import nl.han.ica.Helpers.LiteralTypeVisitor;
 import nl.han.ica.datastructures.HanLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
@@ -51,109 +52,49 @@ public class Evaluator implements Transform {
                 var transform = transformForIfClause((IfClause) child);
 
                 if (node instanceof IfClause) {
-                    replaceOrAddForIf(((IfClause) node), child, transform);
+                    replaceOrAddForNode(node, child, transform);
                     ((IfClause) node).body.remove(child);
-
                     checkNodes(node);
                 }
 
                 if (node instanceof ElseClause) {
-                    replaceOrAddForElse(((ElseClause) node), child, transform);
+                    replaceOrAddForNode(node, child, transform);
                     ((ElseClause) node).body.remove(child);
-
                     checkNodes(node);
                 }
 
                 if (node instanceof Stylerule) {
-                    replaceOrAddForStyleRule(((Stylerule) node), child, transform);
+                    replaceOrAddForNode(node, child, transform);
                     checkNodes(node);
                 }
             }
         }
     }
 
-    private void replaceOrAddForStyleRule(Stylerule nodeType, ASTNode c, ArrayList<ASTNode> data) {
-        //var children = c.getChildren();
-        nodeType.body.remove(c);
+    private void replaceOrAddForNode(ASTNode nodeType, ASTNode c, ArrayList<ASTNode> data) {
+        ((IBodyable) nodeType).getBody().remove(c);
         var parentChildren = nodeType.getChildren();
 
         for (var child : data) {
             for (var pchild : parentChildren) {
                 if (pchild instanceof VariableReference && child instanceof VariableReference) {
                     if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
+                        ((IBodyable) nodeType).getBody().remove(pchild);
+                        ((IBodyable) nodeType).getBody().add(child);
                         return;
                     }
                 }
                 if (pchild instanceof Declaration && child instanceof Declaration) {
                     if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
+                        ((IBodyable) nodeType).getBody().remove(pchild);
+                        ((IBodyable) nodeType).getBody().add(child);
                         return;
                     }
                 }
             }
-            nodeType.body.add(child);
+            ((IBodyable) nodeType).getBody().add(child);
         }
     }
-    private void replaceOrAddForIf(IfClause nodeType, ASTNode c, ArrayList<ASTNode> data) {
-        //var children = c.getChildren();
-        nodeType.body.remove(c);
-        var parentChildren = nodeType.getChildren();
-
-        for (var child : data) {
-            for (var pchild : parentChildren) {
-                if (pchild instanceof VariableReference && child instanceof VariableReference) {
-                    if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
-                        return;
-                    }
-                }
-
-                if (pchild instanceof Declaration && child instanceof Declaration) {
-                    if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
-                        return;
-                    }
-                }
-            }
-            nodeType.body.add(child);
-        }
-    }
-    private void replaceOrAddForElse(ElseClause nodeType, ASTNode c, ArrayList<ASTNode> data) {
-        //var children = c.getChildren();
-        nodeType.body.remove(c);
-        var parentChildren = nodeType.getChildren();
-
-        for (var child : data) {
-            for (var pchild : parentChildren) {
-                if (pchild instanceof VariableReference && child instanceof VariableReference) {
-                    if (Objects.equals(((VariableReference) pchild).name, ((VariableReference) child).name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
-                        return;
-                    }
-                }
-                if (pchild instanceof Declaration && child instanceof Declaration) {
-                    if (Objects.equals(((Declaration) pchild).property.name, ((Declaration) child).property.name)) {
-                        nodeType.body.remove(pchild);
-                        nodeType.body.add(child);
-                        return;
-                    }
-                }
-            }
-            nodeType.body.add(child);
-        }
-    }
-
-
-
-
-
-
 
     private ArrayList<ASTNode> transformForIfClause(IfClause ifClause) {
         if (conditionIsTrue(ifClause.conditionalExpression)) return ifClause.body;
