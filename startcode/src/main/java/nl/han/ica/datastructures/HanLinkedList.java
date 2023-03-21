@@ -1,6 +1,8 @@
 package nl.han.ica.datastructures;
 
 
+import java.util.Optional;
+
 public class HanLinkedList<T> implements IHANLinkedList<T> {
 
     private final Node<T> head;

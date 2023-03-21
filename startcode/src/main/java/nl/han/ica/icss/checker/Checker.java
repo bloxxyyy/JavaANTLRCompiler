@@ -9,12 +9,24 @@ import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
 public class Checker {
 
-    private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
+    private IHANLinkedList<HashMap<String, VarType>> variableTypes;
+    private final ArrayList<HashMap<String, VarType>> usedVariables = new ArrayList<>();
+
+    private static class VarType {
+        public ASTNode node;
+        public ExpressionType type;
+
+        public VarType(VariableAssignment varRef, ExpressionType type) {
+            this.node = varRef;
+            this.type = type;
+        }
+    }
 
     public void check(AST ast) {
         variableTypes = new HanLinkedList<>();
@@ -24,6 +36,27 @@ public class Checker {
             if (astNode instanceof VariableAssignment) checkVariable((VariableAssignment) astNode);
             checkBody(astNode);
         }
+        
+        CheckIfAllVariablesUsed();
+    }
+
+    private void CheckIfAllVariablesUsed() {
+        for (int i = 0; i < variableTypes.getSize(); i++) {
+            for (var var: variableTypes.get(i).entrySet()) {
+
+                boolean isUsed = false;
+                for (HashMap<String, VarType> usedVariable : usedVariables) {
+                    if (usedVariable.containsKey(var.getKey())) {
+                        isUsed = true;
+                        break;
+                    }
+                }
+                if (!isUsed) {
+                    var.getValue().node.setError("Variable is not used!");
+                }
+            }
+        }
+
     }
 
     int scope = 0;
@@ -31,7 +64,7 @@ public class Checker {
     public void checkBody(ASTNode node) {
         if (hasBodyType(node)) {
             scope = scope + 1;
-            HashMap<String, ExpressionType> scopeMap =  new HashMap<>();
+            HashMap<String, VarType> scopeMap =  new HashMap<>();
             variableTypes.insert(scope, scopeMap);
 
             if (node instanceof IfClause) IfCheck((IfClause) node);
@@ -61,13 +94,16 @@ public class Checker {
 
         if(expression instanceof Literal) {
             var type = determineLiteral((Literal) expression);
-            variableTypes.get(scope).put(ref.name, type);
+            var varType = new VarType(astNode, type);
+            variableTypes.get(scope).put(ref.name, varType);
         } else if(expression instanceof VariableReference) {
             ExpressionType expressionType = checkRefVarExists((VariableReference) expression);
-            variableTypes.get(scope).put(ref.name, expressionType);
+            var varType = new VarType(astNode, expressionType);
+            variableTypes.get(scope).put(ref.name, varType);
         } else if(expression instanceof Operation) {
                 ExpressionType expressionType = checkOpp((Operation) expression);
-                variableTypes.get(scope).put(ref.name, expressionType);
+                var varType = new VarType(astNode, expressionType);
+                variableTypes.get(scope).put(ref.name, varType);
         } else {
             astNode.setError("Variable reference has no valid body!");
         }
@@ -75,10 +111,16 @@ public class Checker {
 
     private ExpressionType checkRefVarExists(VariableReference varRef) {
         for(int i = 0; i <= scope; i++) {
-            HashMap<String, ExpressionType> scopeLevelVariables = variableTypes.get(i);
-            ExpressionType expressionType = scopeLevelVariables.get(varRef.name);
+            HashMap<String, VarType> scopeLevelVariables = variableTypes.get(i);
+            ExpressionType expressionType = scopeLevelVariables.get(varRef.name).type;
             var type = Objects.requireNonNullElse(expressionType, ExpressionType.UNDEFINED);
-            if (type != ExpressionType.UNDEFINED) return type;
+            if (type != ExpressionType.UNDEFINED) {
+                var varType = variableTypes.get(scope).get(varRef.name);
+                var hmap = new HashMap<String, VarType>();
+                hmap.put(varRef.name, varType);
+                usedVariables.add(hmap);
+                return type;
+            }
         }
         return ExpressionType.UNDEFINED;
     }

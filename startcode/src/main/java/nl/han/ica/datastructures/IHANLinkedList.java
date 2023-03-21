@@ -1,5 +1,7 @@
 package nl.han.ica.datastructures;
 
+import java.util.Optional;
+
 public interface IHANLinkedList<T> {
     /**
      * Adds value to the front of the list
